@@ -1,0 +1,53 @@
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: muchtodo-mongodb
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - muchtodo-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: muchtodo-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    # Values here override anything in .env, so the DB host is always the
+    # compose service name. Secrets can be supplied via .env or the shell.
+    environment:
+      PORT: "8080"
+      MONGO_URI: "mongodb://mongodb:27017"
+      DB_NAME: "${DB_NAME:-much_todo_db}"
+      JWT_SECRET_KEY: "${JWT_SECRET_KEY:?set JWT_SECRET_KEY in .env}"
+      JWT_EXPIRATION_HOURS: "${JWT_EXPIRATION_HOURS:-72}"
+      ENABLE_CACHE: "false"
+      LOG_LEVEL: "${LOG_LEVEL:-INFO}"
+      LOG_FORMAT: "${LOG_FORMAT:-json}"
+    # The app loads config with viper from ./.env (working dir /app). Without
+    # this file, keys that have no default (MONGO_URI, DB_NAME, JWT_SECRET_KEY,
+    # LOG_*) are not populated from plain env vars. The file must be readable
+    # by the non-root container user (chmod 644 .env).
+    volumes:
+      - ./.env:/app/.env:ro
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - muchtodo-net
+
+networks:
+  muchtodo-net:
+    driver: bridge
+
+volumes:
+  mongo_data:

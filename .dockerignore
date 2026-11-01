@@ -1,0 +1,16 @@
+# Nothing from this repo is copied into the image (the app source is cloned in
+# the Dockerfile), so keep the build context minimal.
+.git
+.gitignore
+.env
+.env.*
+terraform/
+evidence/
+README.md
+*.md
+docker-compose.yml
+Dockerfile
+.dockerignore
+*.tfstate
+*.tfstate.*
+.terraform/
