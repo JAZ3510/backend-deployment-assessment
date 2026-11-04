@@ -131,3 +131,19 @@ Screenshots go in `evidence/`: `terraform apply` output, the AWS console (VPC, i
 ```bash
 cd terraform && terraform destroy
 ```
+
+
+## Evidence
+
+| Screenshot | Shows |
+|---|---|
+| `evidence/terraform-apply.png` | `terraform apply` complete, outputs, and ALB health check |
+| `evidence/vpc-resource-map.png` | VPC `startuptech-vpc` with 2 public and 2 private subnets, IGW and NAT |
+| `evidence/ec2-instances.png` | Bastion, backend and MongoDB instances running (`t3.micro`) |
+| `evidence/security-groups.png` | ALB, bastion, backend and MongoDB security groups |
+| `evidence/target-group-healthy.png` | ALB target group with the backend healthy on `/health` |
+| `evidence/alb-health-check.png` | `docker compose ps` (both containers healthy) and `curl` to the ALB DNS name |
+
+## Troubleshooting note: building on a t3.micro
+
+Compiling the Go application inside `docker build` ran out of memory on the 1 GB `t3.micro` backend instance: the build hung and the server became unresponsive, even with a 2 GB swap file. To fix it, the backend instance type was temporarily changed to `t3.small` (2 GB) through the `backend_instance_type` Terraform variable, the image was built and the stack started, and the instance was then set back to `t3.micro`. The running containers have `restart: unless-stopped`, so they came back up automatically after the resize. For production, build the image in CI and pull it from a registry instead of building on the server.
